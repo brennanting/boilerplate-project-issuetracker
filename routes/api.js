@@ -5,7 +5,7 @@ mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
-
+const ObjectId = require("mongodb").ObjectID;
 
 const Schema = mongoose.Schema;
 
@@ -41,18 +41,20 @@ module.exports = function (app) {
       let project = req.params.project;
       let query = req.query;
       query.project = project;
-      if (query._id) { query._id = new ObjectID(query._id)};
-      if(query.open === 'true') {
-        query.open = true
-      } else if (query.open === 'false') {
-        query.open = false
-      };
+      if (query._id) {
+        query._id = new ObjectId(query._id);
+      }
+      if (query.open === "true") {
+        query.open = true;
+      } else if (query.open === "false") {
+        query.open = false;
+      }
       Issue.find(query)
-        .select('-project')
+        .select("-project")
         .exec((err, issuesFound) => {
           if (err) return console.log(err);
-          res.json(issuesFound)
-        })
+          res.json(issuesFound);
+        });
     })
 
     .post(function (req, res) {
@@ -94,54 +96,60 @@ module.exports = function (app) {
 
     .put(function (req, res) {
       let project = req.params.project;
-      if (!req.body._id) {
-        res.json({error: 'missing _id'})
+      let queryId = new ObjectId(req.body._id);
+      if (!queryId || ! req.body._id) {
+        res.json({ error: "missing _id" });
       } else {
-        let numOfKeys = 0
+        let numOfKeys = 0;
         let updateKeys = {};
         for (const key in req.body) {
           if (req.body[key]) {
-            updateKeys[key] = req.body[key]
-            numOfKeys += 1
+            updateKeys[key] = req.body[key];
+            numOfKeys += 1;
           }
         }
         if (numOfKeys == 1) {
-          res.json({"error":"no update field(s) sent","_id":req.body._id});
+          res.json({ error: "no update field(s) sent", _id: req.body._id });
         } else {
           let datetoset = new Date().toISOString();
           updateKeys.updated_on = datetoset;
-          Issue.findByIdAndUpdate({project: project, _id: req.body._id}, updateKeys, (err, issueFound) => {
-            if (err) {
-              console.log(err);
-              res.json({ error: 'could not update', '_id': req.body._id });
-                     }
-            if (!issueFound) {
-              res.json({ error: 'could not update', '_id': req.body._id });
-            } else {
-              res.json({ result: 'successfully updated', '_id': req.body._id })
-            }
-          })
+          Issue.findByIdAndUpdate(
+            { project: project, _id: queryId },
+            updateKeys,
+            (err, issueFound) => {
+              if (err) {
+                console.log(err);
+              }
+              if (!issueFound) {
+                res.json({ error: "could not update", _id: req.body._id });
+              } else {
+                res.json({ result: "successfully updated", _id: req.body._id });
+              }
+            },
+          );
         }
       }
     })
 
     .delete(function (req, res) {
       let project = req.params.project;
-      if (!req.body._id) {
-        return res.json({error: 'missing _id'})
+      let queryId = new ObjectId(req.body._id);
+      if (!queryId || !req.body._id) {
+        return res.json({ error: "missing _id" });
       } else {
-        Issue.findOneAndDelete({project: project, _id: req.body._id}, (err, issueDeleted) => {
-          if (err) {
-            console.log(err);
-            res.json({error: 'could not delete', '_id': req.body._id});
-          }
-          if (!issueDeleted) {
-            res.json({error: 'could not delete', '_id': req.body._id});
-          } else {
-            res.json({result: 'successfully deleted', '_id': req.body._id})
-          }
-          
-        })
+        Issue.findOneAndDelete(
+          { project: project, _id: queryId },
+          (err, issueDeleted) => {
+            if (err) {
+              console.log(err);
+            }
+            if (!issueDeleted) {
+              res.json({ error: "could not delete", _id: req.body._id });
+            } else {
+              res.json({ result: "successfully deleted", _id: req.body._id });
+            }
+          },
+        );
       }
     });
 };
