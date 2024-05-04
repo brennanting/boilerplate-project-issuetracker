@@ -83,7 +83,6 @@ module.exports = function (app) {
 
         newIssue.save((err, createdIssue) => {
           if (err) return console.log(err);
-          console.log("New issue created");
           Issue.findById(createdIssue._id)
             .select("-project")
             .exec((err, issueFound) => {
@@ -96,8 +95,7 @@ module.exports = function (app) {
 
     .put(function (req, res) {
       let project = req.params.project;
-      let queryId = new ObjectId(req.body._id);
-      if (!queryId || ! req.body._id) {
+      if (!req.body._id) {
         res.json({ error: "missing _id" });
       } else {
         let numOfKeys = 0;
@@ -114,7 +112,7 @@ module.exports = function (app) {
           let datetoset = new Date().toISOString();
           updateKeys.updated_on = datetoset;
           Issue.findByIdAndUpdate(
-            { project: project, _id: queryId },
+            { project: project, _id: req.body._id },
             updateKeys,
             (err, issueFound) => {
               if (err) {
@@ -133,12 +131,11 @@ module.exports = function (app) {
 
     .delete(function (req, res) {
       let project = req.params.project;
-      let queryId = new ObjectId(req.body._id);
-      if (!queryId || !req.body._id) {
+      if (!req.body._id) {
         return res.json({ error: "missing _id" });
       } else {
         Issue.findOneAndDelete(
-          { project: project, _id: queryId },
+          { project: project, _id: req.body._id },
           (err, issueDeleted) => {
             if (err) {
               console.log(err);
